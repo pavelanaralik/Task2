@@ -9,18 +9,26 @@ namespace Task2
         static void Main(string[] args)
         {
             Console.WriteLine("Hello World!");
-            //Assembly currentAssem = Assembly.GetExecutingAssembly();
 
             var container = new Container();
+
             container.AddAssembly(Assembly.GetExecutingAssembly());
             //container.AddType(typeof(CustomerBLL));
             //container.AddType(typeof(Logger));
-            //container.AddType(typeof(ICustomerDAL), typeof(CustomerDAL));
-            //var customerBLL = container.CreateInstance<CustomerBLL>();
-            var customerBLL = (CustomerBLL)container.CreateInstance(
-                typeof(CustomerBLL));
+            //container.AddType(typeof(CustomerDAL), typeof(ICustomerDAL));
 
-            customerBLL.Test();
+            try
+            {
+                var customerBLL = container.CreateInstance<CustomerBLL>();
+                //var customerBLL = (CustomerBLL)container.CreateInstance(
+                //    typeof(CustomerBLL));
+
+                customerBLL.Test();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
     }
 }

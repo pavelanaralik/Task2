@@ -10,24 +10,27 @@ namespace Task2
     [Export]
     public class CustomerBLL
     {
-        [Import]
+        //[Import]
         public ICustomerDAL CustomerDAL { get; set; }
 
-        [Import]
+        //[Import]
         public Logger Logger { get; set; }
 
         public string Name { get; set; }
 
-        public CustomerBLL(/*ICustomerDAL dal, Logger logger*/)
+        public CustomerBLL()
         {
-            //CustomerDAL = dal;
-            //Logger = logger;
+        }
+
+        public CustomerBLL(ICustomerDAL dal, Logger logger)
+        {
+            CustomerDAL = dal;
+            Logger = logger;
         }
 
         public void Test()
         {
             Console.WriteLine("CustomerBLL.Test");
-
             var isCustomerDAL = this.CustomerDAL != null;
             var isLogger = this.Logger != null;
             Console.WriteLine(isCustomerDAL);

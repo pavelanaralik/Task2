@@ -17,13 +17,14 @@ namespace IoC
         {
             var types = assembly.GetTypes()
                 .Where(type => type.GetCustomAttributes<ExportAttribute>(false).SingleOrDefault() != null).ToArray();
+
             foreach (var type in types)
             {
                 var attribute = type.GetCustomAttributes<ExportAttribute>(false).SingleOrDefault();
                 if (attribute != null)
                 {
                     if (attribute.Type != null)
-                        AddType(attribute.Type, type);
+                        AddType(type, attribute.Type);
 
                     AddType(type);
                 }      
@@ -35,19 +36,29 @@ namespace IoC
             Register(type, type, false, null);
         }
 
-        public void AddType(Type type, Type concrete)
+        public void AddType(Type concrete, Type type)
         {
             Register(type, concrete, false, null);
+        }
+
+        public void AddTypeSingleton(Type type)
+        {
+            Register(type, type, true, type);
+        }
+
+        public void AddTypeSingleton(Type type, Type concrete)
+        {
+            Register(type, concrete, true, type);
+        }
+
+        public TType CreateInstance<TType>()
+        {
+            return (TType)ResolveObject(typeof(TType));
         }
 
         public object CreateInstance(Type type)
         {
             return ResolveObject(type);
-        }
-
-        public TTypeToResolve CreateInstance<TTypeToResolve>()
-        {
-            return (TTypeToResolve)ResolveObject(typeof(TTypeToResolve));
         }
 
         private void Register(Type type, Type concrete, bool isSingleton, object instance)
@@ -63,10 +74,11 @@ namespace IoC
             var registeredObject = _registeredObjects[type];
             if (registeredObject == null)
             {
-                throw new ArgumentOutOfRangeException(string.Format("The type {0} has not been registered", type.Name));
+                throw new ArgumentNullException($"The type {type.Name} has not been registered");
             }
             return GetInstance(registeredObject);
         }
+
         private object GetInstance(RegisteredObject registeredObject)
         {
             object instance = registeredObject.SingletonInstance;
@@ -92,12 +104,16 @@ namespace IoC
         private IEnumerable<object> ResolveConstructorParameters(RegisteredObject registeredObject)
         {
             var constructorInfo = registeredObject.ConcreteType.GetConstructors().First();
+
+            if(constructorInfo == null)
+                throw new Exception($"There are no public constructors for type {registeredObject.ConcreteType.FullName}");
+
             return constructorInfo.GetParameters().Select(parameter => ResolveObject(parameter.ParameterType));
         }
 
         private void ResolveProperty(RegisteredObject registeredObject, ref object instance)
         {
-            var properties = registeredObject.ConcreteType.GetRuntimeProperties()
+            var properties = registeredObject.ConcreteType.GetProperties()
                 .Where(x => x.CanWrite && x.IsDefined(typeof(ImportAttribute)));
 
             foreach (var property in properties)
@@ -119,12 +135,14 @@ namespace IoC
                 SingletonInstance = singletoninstance;
                 ConcreteType = concreteType;
             }
+
             public object CreateInstance(params object[] args)
             {
                 object instance = Activator.CreateInstance(ConcreteType, args);
 
                 if (_isSinglton)
                     SingletonInstance = instance;
+
                 return instance;
             }
         }
